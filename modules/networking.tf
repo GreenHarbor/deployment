@@ -3,7 +3,7 @@
 resource "aws_vpc" "default-vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
-    Name = "franky vpc"
+    Name = "greenharbor vpc"
   }
 }
 
@@ -18,7 +18,7 @@ resource "aws_subnet" "default_subnet" {
   cidr_block = "10.0.1.0/24"
   map_public_ip_on_launch = true
   tags = {
-    Name = "franky Subnet"
+    Name = "greenharbor subnet"
   }
 }
 
@@ -36,4 +36,9 @@ resource "aws_route_table" "default_rt" {
 resource "aws_route_table_association" "default_rta" {
   subnet_id      = aws_subnet.default_subnet.id
   route_table_id = aws_route_table.default_rt.id
+}
+
+resource "aws_api_gateway_rest_api" "api_g" {
+  name        = "greenharbor-gateway"
+  description = "GreenHarbor API Gateway"
 }
