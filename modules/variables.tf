@@ -30,3 +30,9 @@ variable "ecs_tasks" {
     }
   }
 }
+
+variable "password" {
+  description = "The password for the RabbitMQ broker"
+  type        = string
+  default     = "password"
+}
