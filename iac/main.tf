@@ -15,4 +15,6 @@ provider "aws" {
 
 module "module" {
   source = "../modules"
+  domain = var.domain
+  password = var.password
 }
