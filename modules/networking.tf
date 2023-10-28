@@ -1,6 +1,6 @@
 
 # Create a VPC
-resource "aws_vpc" "default-vpc" {
+resource "aws_vpc" "default_vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
     Name = "greenharbor vpc"
@@ -9,7 +9,7 @@ resource "aws_vpc" "default-vpc" {
 
 # Create an Internet Gateway
 resource "aws_internet_gateway" "default_igw" {
-  vpc_id = aws_vpc.default-vpc.id
+  vpc_id = aws_vpc.default_vpc.id
 }
 
 # Create a Subnet
@@ -20,6 +20,18 @@ resource "aws_subnet" "default_subnet" {
   tags = {
     Name = "greenharbor subnet"
   }
+  availability_zone = "ap-southeast-1a"
+}
+
+# Create a Subnet
+resource "aws_subnet" "backup_subnet" {
+  vpc_id     = aws_vpc.default_vpc.id
+  cidr_block = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "greenharbor subnet"
+  }
+  availability_zone = "ap-southeast-1b"
 }
 
 # Create a Route Table
@@ -49,16 +61,34 @@ resource "aws_lb" "main" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = [aws_subnet.main.id]
+  subnets            = [aws_subnet.default_subnet.id, aws_subnet.backup_subnet.id]
 }
 
 resource "aws_security_group" "lb_sg" {
-  vpc_id = aws_vpc.main.id
-  # ... ingress/egress rules ...
+  vpc_id = aws_vpc.default_vpc.id
+
+   # Inbound rules
+  ingress {
+    from_port   = 80  # For HTTP traffic
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]  # Allow from anywhere; adjust as needed
+  }
+
+  # Additional ingress rules can be added as needed
+
+  # Outbound rules
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  # Allow all protocols
+    cidr_blocks = ["0.0.0.0/0"]  # Allow to anywhere
+  }
+
 }
 
 resource "aws_api_gateway_method" "apig-method" {
-  rest_api_id   = aws_api_gateway_rest_api.my_api.id
+  rest_api_id   = aws_api_gateway_rest_api.api_g.id
   resource_id   = aws_api_gateway_resource.my_resource.id
   http_method   = "GET"
   authorization = "CUSTOM"
@@ -66,8 +96,15 @@ resource "aws_api_gateway_method" "apig-method" {
 
 }
 
+resource "aws_api_gateway_resource" "my_resource" {
+  rest_api_id = aws_api_gateway_rest_api.api_g.id
+  parent_id   = aws_api_gateway_rest_api.api_g.root_resource_id
+  path_part   = "myresource"  # This will create a resource with path /myresource
+}
+
+
 resource "aws_api_gateway_deployment" "apig-deployment" {
-  rest_api_id = aws_api_gateway_rest_api.my_api.id
+  rest_api_id = aws_api_gateway_rest_api.api_g.id
 
 
   depends_on = [
@@ -79,13 +116,41 @@ resource "aws_cognito_user_pool" "main" {
   name = "my_user_pool"
 
   lambda_config {
-    pre_token_generation = aws_lambda_function.jwt_verifier.arn
+    pre_token_generation = aws_lambda_function.custom_authorizer.arn
   }
 }
 
 # Grant Cognito permission to invoke the Lambda function
 resource "aws_lambda_permission" "cognito" {
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.jwt_verifier.function_name
+  function_name = aws_lambda_function.custom_authorizer.function_name
   principal     = "cognito-idp.amazonaws.com"
+}
+
+resource "aws_security_group" "ecs_tasks_sg" {
+  name        = "ecs_tasks_sg"
+  description = "Security Group for ECS Tasks"
+  vpc_id      =  aws_vpc.default_vpc.id # Replace with your VPC ID
+
+  # Inbound rules
+  ingress {
+    from_port   = 80  # For HTTP traffic
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]  # Allow from anywhere; adjust as needed
+  }
+
+  # Additional ingress rules can be added as needed
+
+  # Outbound rules
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  # Allow all protocols
+    cidr_blocks = ["0.0.0.0/0"]  # Allow to anywhere
+  }
+
+  tags = {
+    Name = "ecs_tasks_sg"
+  }
 }

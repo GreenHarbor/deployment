@@ -22,5 +22,8 @@ resource "aws_mq_configuration" "rabbitmq_configuration" {
   engine_version     = "3.8.6" # Use the desired version
   name               = "my-rabbitmq-configuration"
   description        = "My RabbitMQ configuration"
-  data               = file("path_to_configuration_file.xml") # If you have a custom configuration file
+    data = <<DATA
+# Default RabbitMQ delivery acknowledgement timeout is 30 minutes in milliseconds
+consumer_timeout = 1800000
+DATA
 }

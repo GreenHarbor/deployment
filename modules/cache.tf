@@ -1,6 +1,6 @@
 resource "aws_cloudfront_distribution" "cloudfront" {
   origin {
-    domain_name = aws_api_gateway_rest_api.api_g.id + ".execute-api." + var.aws_region + ".amazonaws.com"
+    domain_name = "${aws_api_gateway_rest_api.api_g.id}.execute-api.${var.aws_region}.amazonaws.com"
     origin_id   = "apiGatewayOrigin"
 
     custom_origin_config {

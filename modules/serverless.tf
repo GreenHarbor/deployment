@@ -8,7 +8,7 @@ resource "aws_lambda_function" "custom_authorizer" {
 
 resource "aws_api_gateway_authorizer" "custom_authorizer" {
   name                   = "customAuthorizer"
-  rest_api_id            = aws_api_gateway_rest_api.my_api.id
+  rest_api_id            = aws_api_gateway_rest_api.api_g.id
   authorizer_uri         = "arn:aws:apigateway:ap-southeast-1:lambda:path/2015-03-31/functions/${aws_lambda_function.custom_authorizer.arn}/invocations"
   authorizer_credentials = aws_iam_role.lambda_exec.arn
   type                   = "TOKEN"

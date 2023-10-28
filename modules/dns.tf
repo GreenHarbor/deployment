@@ -2,12 +2,8 @@ resource "aws_route53_zone" "primary" {
   name  = var.domain
 }
 
-data "aws_route53_zone" "primary" {
-  name  = var.domain
-}
-
 locals {
-  dns_zone_id = data.aws_route53_zone.primary[0].zone_id
+  dns_zone_id = aws_route53_zone.primary.zone_id
 }
 
 resource "aws_route53_record" "root" {

@@ -1,7 +1,6 @@
 variable "domain" {
   description = "The url for the application"
   type        = string
-  default = "greenharbor.org"
 }
 
 variable "aws_region" {
@@ -34,5 +33,4 @@ variable "ecs_tasks" {
 variable "password" {
   description = "The password for the RabbitMQ broker"
   type        = string
-  default     = "password"
 }

@@ -16,25 +16,27 @@ resource "aws_ecs_task_definition" "tasks" {
 
   container_definitions = jsonencode([{
     name  = each.value.name
-    image = "${aws_ecr_repository.my_repo[each.value.name].repository_url}:latest"
+    image = "${aws_ecr_repository.my_repo[each.key].repository_url}:latest"
     portMappings = [{
       containerPort = 80
       hostPort      = 80
     }]
   }])
+
+  depends_on = [  ]
 }
 
 resource "aws_ecs_service" "my_service" {
   for_each = aws_ecs_task_definition.tasks
 
-  name            = each.value.name
+  name            = each.value.family
   cluster         = aws_ecs_cluster.cluster.id
   task_definition = each.value.arn
   launch_type     = "FARGATE"
   desired_count   = 1
 
   network_configuration {
-    subnets = [aws_subnet.public_subnet.id]
+    subnets = [aws_subnet.default_subnet.id]
     security_groups = [aws_security_group.ecs_tasks_sg.id]
   }
 }
