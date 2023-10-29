@@ -1,7 +1,8 @@
 resource "aws_wafv2_web_acl" "waf" {
   name        = "greenharbor-waf"
-  scope       = "CLOUDFRONT"  # or "CLOUDFRONT" based on where you want to use it
+  scope       = "REGIONAL"
   description = "Description for your WebACL"
+  
   default_action {
     allow {}
   }
@@ -13,6 +14,6 @@ resource "aws_wafv2_web_acl" "waf" {
 }
 
 resource "aws_wafv2_web_acl_association" "wafrule" {
-  resource_arn = aws_api_gateway_rest_api.api_g.arn  # ARN of the resource to associate with, e.g., an Application Load Balancer
+  resource_arn = "${aws_api_gateway_rest_api.api_g.arn}/stages/${aws_api_gateway_stage.example.stage_name}"  # ARN of the resource to associate with, e.g., an Application Load Balancer
   web_acl_arn  = aws_wafv2_web_acl.waf.arn   # ARN of the WAFv2 WebACL
 }

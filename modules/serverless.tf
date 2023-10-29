@@ -1,5 +1,5 @@
 resource "aws_lambda_function" "custom_authorizer" {
-  filename      = "path_to_your_lambda_function_package.zip"
+  filename      = "../cognito.zip"
   function_name = "customAuthorizerFunction"
   role          = aws_iam_role.lambda_exec.arn
   handler       = "index.handler"  

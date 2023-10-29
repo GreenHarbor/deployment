@@ -26,7 +26,7 @@ resource "aws_subnet" "default_subnet" {
 # Create a Subnet
 resource "aws_subnet" "backup_subnet" {
   vpc_id     = aws_vpc.default_vpc.id
-  cidr_block = "10.0.1.0/24"
+  cidr_block = "10.0.2.0/24"
   map_public_ip_on_launch = true
   tags = {
     Name = "greenharbor subnet"
@@ -54,6 +54,15 @@ resource "aws_api_gateway_rest_api" "api_g" {
   name        = "greenharbor-gateway"
   description = "GreenHarbor API Gateway"
 }
+
+resource "aws_api_gateway_stage" "example" {
+  deployment_id = aws_api_gateway_deployment.apig-deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.api_g.id
+  stage_name    = "prod"
+
+  # Additional settings like logging, caching, etc. can be set here
+}
+
 
 # Create an Application Load Balancer
 resource "aws_lb" "main" {
@@ -102,6 +111,13 @@ resource "aws_api_gateway_resource" "my_resource" {
   path_part   = "myresource"  # This will create a resource with path /myresource
 }
 
+resource "aws_api_gateway_integration" "example" {
+  rest_api_id = aws_api_gateway_rest_api.api_g.id
+  resource_id = aws_api_gateway_resource.my_resource.id
+  http_method = aws_api_gateway_method.apig-method.http_method
+
+  type        = "MOCK"
+}
 
 resource "aws_api_gateway_deployment" "apig-deployment" {
   rest_api_id = aws_api_gateway_rest_api.api_g.id
