@@ -63,39 +63,6 @@ resource "aws_api_gateway_stage" "example" {
   # Additional settings like logging, caching, etc. can be set here
 }
 
-
-# Create an Application Load Balancer
-resource "aws_lb" "main" {
-  name               = "my-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = [aws_subnet.default_subnet.id, aws_subnet.backup_subnet.id]
-}
-
-resource "aws_security_group" "lb_sg" {
-  vpc_id = aws_vpc.default_vpc.id
-
-   # Inbound rules
-  ingress {
-    from_port   = 80  # For HTTP traffic
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow from anywhere; adjust as needed
-  }
-
-  # Additional ingress rules can be added as needed
-
-  # Outbound rules
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"  # Allow all protocols
-    cidr_blocks = ["0.0.0.0/0"]  # Allow to anywhere
-  }
-
-}
-
 resource "aws_api_gateway_method" "apig-method" {
   rest_api_id   = aws_api_gateway_rest_api.api_g.id
   resource_id   = aws_api_gateway_resource.my_resource.id
@@ -168,5 +135,73 @@ resource "aws_security_group" "ecs_tasks_sg" {
 
   tags = {
     Name = "ecs_tasks_sg"
+  }
+}
+
+resource "aws_lb" "my_alb" {
+  for_each = var.ecs_tasks
+
+  name               = each.key
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.lb_sg.id]
+  subnets            = [aws_subnet.default_subnet.id, aws_subnet.backup_subnet.id]
+  
+  // ... other configuration ...
+}
+
+resource "aws_lb_target_group" "my_tg" {
+  for_each = var.ecs_tasks
+
+  name     = each.key
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.default_vpc.id
+  target_type = "ip"
+
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 2
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 30
+  }
+
+  // ... other configuration ...
+}
+resource "aws_security_group" "lb_sg" {
+  vpc_id = aws_vpc.default_vpc.id
+
+   # Inbound rules
+  ingress {
+    from_port   = 80  # For HTTP traffic
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]  # Allow from anywhere; adjust as needed
+  }
+
+  # Additional ingress rules can be added as needed
+
+  # Outbound rules
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  # Allow all protocols
+    cidr_blocks = ["0.0.0.0/0"]  # Allow to anywhere
+  }
+
+}
+
+resource "aws_lb_listener" "my_listener" {
+  for_each = var.ecs_tasks
+  load_balancer_arn = aws_lb.my_alb[each.key].arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.my_tg[each.key].arn
   }
 }

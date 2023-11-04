@@ -8,7 +8,7 @@ resource "aws_mq_broker" "rabbitmq_broker" {
     revision = aws_mq_configuration.rabbitmq_configuration.latest_revision
   }
 
-  host_instance_type = "mq.m5.large"
+  host_instance_type = "mq.t3.micro"
   publicly_accessible = true
 
   user {
