@@ -1,5 +1,5 @@
-resource "aws_ecs_task_definition" "es" {
-  family                   = "elasticsearch"
+resource "aws_ecs_task_definition" "kb" {
+  family                   = "kibana"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "1024"
@@ -12,11 +12,11 @@ resource "aws_ecs_task_definition" "es" {
   }
 
   container_definitions = jsonencode([{
-    name  = "elasticsearch"
-    image = "docker.elastic.co/elasticsearch/elasticsearch:8.10.2"
+    name  = "kibana"
+    image = "docker.elastic.co/kibana/kibana:8.10.2"
     portMappings = [{
-      containerPort = 9200
-      hostPort      = 9200
+      containerPort = 5601
+      hostPort      = 5601
     }]
     logConfiguration = {
       logDriver = "awslogs"
@@ -28,29 +28,21 @@ resource "aws_ecs_task_definition" "es" {
     }
     environment = [
       {
-        name = "discovery.type"
-        value = "single-node"
+        name = "ELASTICSEARCH_URL"
+        value = "http://elasticsearch-795535539.ap-southeast-1.elb.amazonaws.com/"
       },
       {
-        name= "ES_JAVA_OPTS",
-        value = "-Xms256m -Xmx256m"
-      },
-      {
-        name = "xpack.security.enabled"
-        value = "false"
-      },
-      {
-        name = "xpack.security.enrollment.enabled"
-        value = "false"
+        name= "ELASTICSEARCH_HOSTS",
+        value = "http://elasticsearch-795535539.ap-southeast-1.elb.amazonaws.com/"
       }
     ]
   }])
 }
 
-resource "aws_ecs_service" "es_service" {
-  name            = "elasticsearch"
+resource "aws_ecs_service" "kb_service" {
+  name            = "kibana"
   cluster         = aws_ecs_cluster.cluster.id
-  task_definition = aws_ecs_task_definition.es.arn
+  task_definition = aws_ecs_task_definition.kb.arn
   launch_type     = "FARGATE"
   desired_count   = 1
 
@@ -61,14 +53,14 @@ resource "aws_ecs_service" "es_service" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.es_tg.arn
-    container_name   = "elasticsearch"
-    container_port   = 9200
+    target_group_arn = aws_lb_target_group.kb_tg.arn
+    container_name   = "kibana"
+    container_port   = 5601
   }
 }
 
-resource "aws_lb" "es_alb" {
-  name               = "elasticsearch"
+resource "aws_lb" "kb_alb" {
+  name               = "kibana"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb_sg.id]
@@ -77,9 +69,9 @@ resource "aws_lb" "es_alb" {
   // ... other configuration ...
 }
 
-resource "aws_lb_target_group" "es_tg" {
-  name     = "elasticsearch"
-  port     = 9200
+resource "aws_lb_target_group" "kb_tg" {
+  name     = "kibana"
+  port     = 5601
   protocol = "HTTP"
   vpc_id   = aws_vpc.default_vpc.id
   target_type = "ip"
@@ -97,13 +89,13 @@ resource "aws_lb_target_group" "es_tg" {
   // ... other configuration ...
 }
 
-resource "aws_lb_listener" "es_listener" {
-  load_balancer_arn = aws_lb.es_alb.arn
+resource "aws_lb_listener" "kb_listener" {
+  load_balancer_arn = aws_lb.kb_alb.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.es_tg.arn
+    target_group_arn = aws_lb_target_group.kb_tg.arn
   }
 }
