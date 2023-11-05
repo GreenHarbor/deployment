@@ -31,6 +31,14 @@ variable "ecs_tasks" {
     task5 ={
       name = "logging",
       port = 3000
+    },
+    task6 ={
+      name = "food_rescue_subscription",
+      port = 80
+    },
+    task7 ={
+      name = "workshop_participation",
+      port = 5001
     }
   }
 }
