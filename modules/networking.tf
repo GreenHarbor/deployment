@@ -117,8 +117,8 @@ resource "aws_security_group" "ecs_tasks_sg" {
 
   # Inbound rules
   ingress {
-    from_port   = 80  # For HTTP traffic
-    to_port     = 80
+    from_port   = 0  # For HTTP traffic
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]  # Allow from anywhere; adjust as needed
   }
@@ -154,7 +154,7 @@ resource "aws_lb_target_group" "my_tg" {
   for_each = var.ecs_tasks
 
   name     = each.key
-  port     = 80
+  port     = each.value.port
   protocol = "HTTP"
   vpc_id   = aws_vpc.default_vpc.id
   target_type = "ip"

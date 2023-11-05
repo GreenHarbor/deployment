@@ -13,19 +13,24 @@ variable "ecs_tasks" {
   description = "Map of ECS tasks"
   default = {
     task1 = {
-      name = "food_rescue"
+      name = "food_rescue",
+      port = 5000
     },
     task2 = {
-      name = "authentication"
+      name = "authentication",
+      port = 3001
     },
     task3 ={
-      name = "workshop"
+      name = "workshop",
+      port = 8080
     },
     task4 ={
-      name = "notification"
+      name = "notification",
+      port = 3000
     },
     task5 ={
-      name = "logging"
+      name = "logging",
+      port = 3000
     }
   }
 }

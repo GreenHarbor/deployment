@@ -32,9 +32,17 @@ resource "aws_ecs_task_definition" "tasks" {
     name  = each.value.name
     image = "${aws_ecrpublic_repository.my_repo[each.key].repository_uri}:latest"
     portMappings = [{
-      containerPort = 80
-      hostPort      = 80
+      containerPort = each.value.port
+      hostPort      = each.value.port
     }]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.ecs_log_group.name
+        "awslogs-region"        = "ap-southeast-1" # Replace with your AWS region
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
   }])
 
   tags = {
@@ -43,11 +51,11 @@ resource "aws_ecs_task_definition" "tasks" {
 }
 
 resource "aws_ecs_service" "my_service" {
-  for_each = aws_ecs_task_definition.tasks
+  for_each = var.ecs_tasks
 
-  name            = each.value.family
+  name            = each.value.name
   cluster         = aws_ecs_cluster.cluster.id
-  task_definition = each.value.arn
+  task_definition = aws_ecs_task_definition.tasks[each.key].arn
   launch_type     = "FARGATE"
   desired_count   = 1
 
@@ -59,10 +67,11 @@ resource "aws_ecs_service" "my_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.my_tg[each.key].arn
-    container_name   = each.value.family
-    container_port   = 80
+    container_name   = each.value.name
+    container_port   = each.value.port
   }
 }
+
 
 resource "aws_ecs_cluster" "cluster" {
   name = "greenharbor"
