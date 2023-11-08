@@ -38,7 +38,7 @@ variable "ecs_tasks" {
     },
     task7 ={
       name = "workshop_participation",
-      port = 5001
+      port = 5000
     }
   }
 }

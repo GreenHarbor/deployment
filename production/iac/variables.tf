@@ -7,7 +7,7 @@ variable "profile" {
 variable "domain" {
   description = "The url for the application"
   type        = string
-  default = "greenharbor.org"
+  default = "greenharbor.cfd"
 }
 
 variable "password" {
